@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SimuLang Web IDE</title>
+    <style>
+        body { font-family: monospace; background: #1e1e1e; color: #dcdcdc; padding: 20px; }
+        textarea { width: 100%; height: 300px; background: #252526; color: #dcdcdc; font-family: monospace; border: 1px solid #333; padding: 10px; }
+        button { margin-top: 10px; padding: 10px 20px; background: #007acc; color: white; border: none; cursor: pointer; margin-right: 10px; }
+        pre { background: #2d2d2d; padding: 10px; border: 1px solid #444; margin-top: 20px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>SimuLang Web IDE</h1>
+    <textarea id="code">
+        // Write your SimuLang code here
+        coeternal light := 1;
+        octyl time := 0; 
+
+        posit varnothing nabla infty ds2(): {
+            print("Time is " + time);
+            time := time + 1;
+            recur ds2(100∞);
+        }
+
+        posit Octave(): {
+            print("Octave invoked.");
+        }
+
+        posit Intertillage(): {
+            print("Intertillage invoked.");
+        }
+
+        posit Delineator(): {
+            print("Delineator invoked.");
+        }
+
+        posit Equiangular(): {
+            print("Equiangular invoked.");
+        }
+    </textarea><br>
+    <button onclick="compileCode()">Compile Only</button>
+    <button onclick="runCode()">Run</button>
+    <button onclick="stopCode()">Stop</button>
+
+    <pre id="output"></pre>
+
+    <script>
+        let outputInterval = null;
+
+        async function compileCode() {
+            const code = document.getElementById("code").value;
+            const response = await fetch("/compile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code })
+            });
+            const result = await response.json();
+            document.getElementById("output").textContent =
+                result.output || ("Error: " + result.error);
+        }
+
+        async function runCode() {
+            const code = document.getElementById("code").value;
+            document.getElementById("output").textContent = "Executing...\n";
+            await fetch("/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code })
+            });
+            startOutputLoop();
+        }
+
+        async function stopCode() {
+            await fetch("/stop", { method: "POST" });
+            document.getElementById("output").textContent += "\\n⛔ Stop requested.";
+        }
+
+        function startOutputLoop() {
+            if (outputInterval) clearInterval(outputInterval);
+            outputInterval = setInterval(async () => {
+                const res = await fetch("/fetch_output");
+                const data = await res.json();
+                document.getElementById("output").textContent = data.output;
+                if (data.done) {
+                    clearInterval(outputInterval);
+                    outputInterval = null;
+                    document.getElementById("output").textContent += "\\n✅ Execution complete.";
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
