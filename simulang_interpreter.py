@@ -1,3 +1,5 @@
+from symbolic_infinity import SymbolicInfinity
+
 function_table = {}  # Global function table
 
 class Environment:
@@ -29,6 +31,8 @@ def execute(node, env, should_continue=lambda: True):
                 execute(child, env, should_continue)
             elif child.type == "Call":
                 execute(child, env, should_continue)
+            else:
+                execute(child, env, should_continue)
 
         if "ds2" in function_table:
             execute(function_table["ds2"], env, should_continue)
@@ -59,7 +63,7 @@ def execute(node, env, should_continue=lambda: True):
 
     elif node.type == "Print":
         val = evaluate_expr(node.value, env)
-        print(val)
+        print(str(val))
 
     elif node.type == "Recur":
         if node.value is not None:
@@ -72,21 +76,224 @@ def execute(node, env, should_continue=lambda: True):
             raise RuntimeError(f"Undefined function: {fname}")
         execute(function_table[fname], env, should_continue)
 
+    elif node.type == "Conditional":
+        op, left_expr, right_expr = node.value
+        lval = evaluate_expr(left_expr, env)
+        rval = evaluate_expr(right_expr, env)
+
+        truth = False
+        if op == "==": truth = lval == rval
+        elif op == "!=": truth = lval != rval
+        elif op == "<":  truth = lval < rval
+        elif op == ">":  truth = lval > rval
+        elif op == "<=": truth = lval <= rval
+        elif op == ">=": truth = lval >= rval
+        else: raise RuntimeError(f"Unsupported comparison: {op}")
+
+        if truth:
+            for child in node.children:
+                execute(child, env, should_continue)
+
+    elif node.type == "Delineator":
+        label = node.value
+        print("⎯⎯ delineator:", label, "⎯⎯")
+        for child in node.children:
+            execute(child, env, should_continue)
+        print("⎯⎯ end delineator:", label, "⎯⎯") 
+
+    elif node.type == "Intertillage":
+        start_expr, end_expr, varname = node.value
+        start = evaluate_expr(start_expr, env)
+        end = evaluate_expr(end_expr, env)
+
+        def symbolic_absolute_offset(sym):
+            if isinstance(sym, (int, float)):
+                return int(sym)  # numeric literal like 0 or 10
+
+            if isinstance(sym, SymbolicInfinity):
+                if sym.operation == '+':
+                    return int(1e9 + int(sym.right))
+                elif sym.operation == '-':
+                    return int(1e9 - int(sym.right))
+                elif sym.operation == '/':
+                    return int(1e9 // int(sym.right))
+                elif sym.operation == '*':
+                    return int(sym.coefficient * 1e9)
+                elif sym.operation is None:
+                    return int(1e9)
+                else:
+                    raise RuntimeError(f"Unsupported symbolic operation: {sym.operation}")
+
+            raise RuntimeError(f"Unsupported value in intertillage range: {sym}")
+
+        start_offset = symbolic_absolute_offset(start)
+        end_offset = symbolic_absolute_offset(end)
+
+        if start_offset > end_offset:
+            print(f"⚠️ Reversing intertillage bounds: start={start_offset}, end={end_offset}")
+            start_offset, end_offset = end_offset, start_offset
+            start, end = end, start  # swap base too
+
+        range_size = end_offset - start_offset + 1
+
+        if range_size <= 0:
+            print("⚠️ Empty intertillage range.")
+            return
+
+        if range_size > 10000:
+            print("⚠️ Loop bounded to 10000 steps.")
+            end_offset = start_offset + 9999
+
+        DISPLAY_HEAD = 100
+        DISPLAY_TAIL = 1
+        DISPLAY_LIMIT = DISPLAY_HEAD + DISPLAY_TAIL
+
+        range_size = end_offset - start_offset + 1
+        show_ellipsis = range_size > DISPLAY_LIMIT
+        split_point = start_offset + DISPLAY_HEAD
+
+        for offset in range(start_offset, end_offset + 1):
+            if show_ellipsis and offset == split_point:
+                print("...")
+                continue
+
+            is_tail = (offset > end_offset - DISPLAY_TAIL)
+
+            if not show_ellipsis or offset < split_point or is_tail:
+                if offset == start_offset and isinstance(start, SymbolicInfinity):
+                    symbolic_i = start
+                elif offset == end_offset and isinstance(end, SymbolicInfinity):
+                    symbolic_i = end
+                elif isinstance(start, SymbolicInfinity):
+                    delta = offset - start_offset
+                    symbolic_i = SymbolicInfinity(operation='+', right=delta, base=start)
+                else:
+                    symbolic_i = offset
+
+                env.set(varname, symbolic_i)
+                for child in node.children:
+                    execute(child, env, should_continue)
+
+    elif node.type == "Bifurcator":
+        origin_expr, left_expr, right_expr, outer_name, lvar, rvar = node.value
+        origin = evaluate_expr(origin_expr, env) if origin_expr else 1  # Default to 1 if implicit
+        left = evaluate_expr(left_expr, env)
+        right = evaluate_expr(right_expr, env)
+
+        # Optional symbolic feedback
+        print(f"🔀 Bifurcator '{outer_name}': Left → {left}, Right → {right} (Origin: {origin})")
+
+        # Set vars into the environment
+        env.set(outer_name, origin)
+        env.set(lvar, left)
+        env.set(rvar, right)
+
+        for child in node.children:
+            execute(child, env, should_continue)
+
+    elif node.type == "Boundary":
+        (start_expr, end_expr), varname = node.value
+        start = evaluate_expr(start_expr, env)
+        end = evaluate_expr(end_expr, env)
+
+        def is_infinite(val):
+            return isinstance(val, SymbolicInfinity)
+
+        DISPLAY_HEAD = 5
+        DISPLAY_TAIL = 1
+
+        def format_symbolic_range(start_val, end_val):
+            if is_infinite(end_val):
+                points = [start_val + i for i in range(DISPLAY_HEAD)]
+                points.append("...")
+                points.append(SymbolicInfinity(operation='+', right=1, base=end_val))
+                return points
+            else:
+                return list(range(int(start_val - 1), int(end_val + 2)))
+
+        def format_side(start_val, end_val, is_left):
+            if is_infinite(end_val):
+                if is_left:
+                    return [start_val - 1 + i for i in range(3)]
+                else:
+                    return [SymbolicInfinity(operation='+', right=i, base=end_val) for i in range(3)]
+            else:
+                if is_left:
+                    return [start_val - 1 + i for i in range(3)]
+                else:
+                    return [end_val + 1 + i for i in range(3)]
+
+        # top and bottom
+        top = format_symbolic_range(start, end)
+        bottom = format_symbolic_range(start, end)
+
+        # left and right
+        left = format_side(start, end, is_left=True)
+        right = format_side(start, end, is_left=False)
+
+        boundary_struct = {
+            "top": top,
+            "left": left,
+            "bottom": bottom,
+            "right": right
+        }
+
+        env.set(varname, boundary_struct)
+
+        for child in node.children:
+            execute(child, env)
+
 def evaluate_expr(expr, env):
     type_ = expr[0]
+
     if type_ == "Number":
         return expr[1]
+
     elif type_ == "String":
         return expr[1]
+
     elif type_ == "Ident":
+        if expr[1] == "∞":
+            return 1e9  # symbolic ∞
         return env.get(expr[1])
+        val = env.get(expr[1])
+        if val is None:
+            raise RuntimeError(f"Undefined variable: {expr[1]}")
+        return val
+
+    elif type_ == "Infty":
+        return SymbolicInfinity()
+
+    elif type_ == "Member":
+        base = evaluate_expr(expr[1], env)
+        attr = expr[2]
+        if isinstance(base, dict) and attr in base:
+            return base[attr]
+        else:
+            raise RuntimeError(f"Object has no attribute '{attr}'")
+
     elif type_ == "Binary":
         op, left, right = expr[1], expr[2], expr[3]
         lval = evaluate_expr(left, env)
         rval = evaluate_expr(right, env)
-        if op == "+":
-            if isinstance(lval, str) or isinstance(rval, str):
-                return str(lval) + str(rval)
-            return lval + rval
-        else:
-            raise RuntimeError(f"Unsupported operator: {op}")
+
+        # Handle symbolic ∞ cases
+        if isinstance(lval, SymbolicInfinity) and isinstance(rval, (int, float)):
+            return SymbolicInfinity(coefficient=lval.coefficient, operation=op, right=rval, base=lval.base)
+
+        if isinstance(rval, SymbolicInfinity) and isinstance(lval, (int, float)):
+            return SymbolicInfinity(coefficient=lval, operation=op, right=rval.right, base=rval.base)
+
+        if isinstance(lval, (int, float)) and isinstance(rval, (int, float)):
+            return eval_binary_math(op, lval, rval)
+
+        # Normal arithmetic fallback
+        if op == "+": return lval + rval
+        elif op == "-": return lval - rval
+        elif op == "*": return lval * rval
+        elif op == "/": return lval / rval
+        elif op == "%": return lval % rval
+
+    else:
+        raise RuntimeError(f"Unknown expression type: {type_}")
+

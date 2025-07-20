@@ -13,31 +13,19 @@
 <body>
     <h1>SimuLang Web IDE</h1>
     <textarea id="code">
-        // Write your SimuLang code here
-        coeternal light := 1;
-        octyl time := 0; 
+coeternal light := ∞;
 
-        posit varnothing nabla infty ds2(): {
-            print("Time is " + time);
-            time := time + 1;
-            recur ds2(100∞);
-        }
-
-        posit Octave(): {
-            print("Octave invoked.");
-        }
-
-        posit Intertillage(): {
-            print("Intertillage invoked.");
-        }
-
-        posit Delineator(): {
-            print("Delineator invoked.");
-        }
-
-        posit Equiangular(): {
-            print("Equiangular invoked.");
-        }
+posit varnothing nabla infty ds2(): {
+    intertillage [0..∞] -> x: { print(x); }
+    delineator "boundary": { octyl time := 1; print(time); print(light); }
+    bifurcator ∞[2∞, 3∞] -> a(b, x): { print(a); print(b); print(x); }
+    octyl field_generator := 100;
+    equiangular field_generator == 100: { print("Simulonic Field Generator is on."); }
+    boundary [0..∞] -> frame: { print(frame); }
+    boundary [0..2∞] -> b_frame: { print(b_frame); }
+    boundary [0..3∞] -> c_frame: { print(c_frame); }
+    recur ds2(10∞);
+}
     </textarea><br>
     <button onclick="compileCode()">Compile Only</button>
     <button onclick="runCode()">Run</button>

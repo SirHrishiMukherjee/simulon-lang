@@ -1,12 +1,15 @@
 import re
 
 TOKEN_TYPES = [
-    ('KEYWORD', r'\b(posit|varnothing|nabla|infty|ds2|coeternal|octyl|equiangular|intertillage|delineator|recur|print)\b'),
+    ('KEYWORD', r'\b(boundary|bifurcator|posit|varnothing|nabla|infty|ds2|coeternal|octyl|equiangular|intertillage|delineator|recur|print)\b'),
     ('IDENT',   r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMBER',  r'\b\d+(\.\d+)?\b'),
     ('STRING',  r'"[^"]*"'),
-    ('ASSIGN',  r'\:='),
-    ('SYMBOL',  r'[{}();=+\-\[\]<>:∞]'),  # Note: keep ':' here but after ':=' is matched
+    ('ASSIGN',  r'\:='),       
+    ('RANGE',   r'\.\.'),
+    ('ARROW',   r'->'),
+    ('COMPARE', r'(==|!=|<=|>=|<|>)'),
+    ('SYMBOL',  r'[{}();=+\-*/%\[\]<>:∞,.]'),  # keep ∞ here
     ('WHITESPACE', r'\s+'),
     ('COMMENT', r'//.*'),
 ]

@@ -43,7 +43,8 @@ def run_code():
             ast = parse(tokens)
             env = Environment()
             sys.stdout = output_buffer
-            execute(ast, env, lambda: not stop_flag)
+            for node in ast.children:
+                execute(node, env, lambda: not stop_flag)
         except Exception as e:
             output_buffer.write("Error: " + str(e))
         finally:
