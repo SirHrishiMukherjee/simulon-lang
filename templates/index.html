@@ -4,16 +4,90 @@
     <meta charset="UTF-8">
     <title>SimuLang Web IDE</title>
     <style>
-        body { font-family: monospace; background: #1e1e1e; color: #dcdcdc; padding: 20px; }
-        textarea { width: 100%; height: 300px; background: #252526; color: #dcdcdc; font-family: monospace; border: 1px solid #333; padding: 10px; }
-        button { margin-top: 10px; padding: 10px 20px; background: #007acc; color: white; border: none; cursor: pointer; margin-right: 10px; }
-        pre { background: #2d2d2d; padding: 10px; border: 1px solid #444; margin-top: 20px; white-space: pre-wrap; }
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #dcdcdc;
+            padding: 20px;
+        }
+        .codebox {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #444;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #2d2d2d;
+            color: #dcdcdc;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+            user-select: none;
+        }
+        .tab.active {
+            background: #007acc;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: #252526;
+            color: #dcdcdc;
+            font-family: monospace;
+            border: 1px solid #333;
+            padding: 10px;
+            resize: vertical;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        pre {
+            background: #2d2d2d;
+            padding: 10px;
+            border: 1px solid #444;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
     <h1>SimuLang Web IDE</h1>
-    <textarea id="code">
-coeternal light := ∞;
+    <div class="codebox">
+        <div class="tabs">
+            <div class="tab active" data-tab="example1">Example 1: Infinity Loop</div>
+            <div class="tab" data-tab="example2">Example 2: Basic Constructs</div>
+        </div>
+        <div class="tab-content active" id="example1">
+            <textarea id="code-example1">coeternal light := ∞;
+
+posit varnothing nabla infty ds2(): {
+    octyl time := 1;
+    time := time + 1;
+    intertillage [2∞..10∞] -> i: {
+        time := i + time;
+        print(time);
+    }
+}</textarea>
+        </div>
+        <div class="tab-content" id="example2">
+            <textarea id="code-example2">coeternal light := ∞;
 
 posit varnothing nabla infty ds2(): {
     intertillage [0..∞] -> x: { print(x); }
@@ -26,31 +100,58 @@ posit varnothing nabla infty ds2(): {
     boundary [0..3∞] -> c_frame: { print(c_frame); }
     recur ds2(10∞);
 }
-    </textarea><br>
-    <button onclick="compileCode()">Compile Only</button>
-    <button onclick="runCode()">Run</button>
-    <button onclick="stopCode()">Stop</button>
-
-    <pre id="output"></pre>
+    </textarea>
+        </div>
+        <div class="buttons">
+            <button onclick="compileCode()">Compile Only</button>
+            <button onclick="runCode()">Run</button>
+            <button onclick="stopCode()">Stop</button>
+        </div>
+        <pre id="output"></pre>
+    </div>
 
     <script>
         let outputInterval = null;
 
+        // Tab switching logic
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                // Add active class to clicked tab and its content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Get code from active tab
+        function getActiveCode() {
+            const activeTab = document.querySelector('.tab-content.active textarea');
+            return activeTab.value;
+        }
+
         async function compileCode() {
-            const code = document.getElementById("code").value;
+            const code = getActiveCode();
+            const output = document.getElementById("output");
+            output.textContent = "Compiling...\n";
             const response = await fetch("/compile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ code })
             });
             const result = await response.json();
-            document.getElementById("output").textContent =
-                result.output || ("Error: " + result.error);
+            output.textContent = result.output || ("Error: " + result.error);
         }
 
         async function runCode() {
-            const code = document.getElementById("code").value;
-            document.getElementById("output").textContent = "Executing...\n";
+            const code = getActiveCode();
+            const output = document.getElementById("output");
+            output.textContent = "Executing...\n";
             await fetch("/run", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
