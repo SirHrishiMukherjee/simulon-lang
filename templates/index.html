@@ -49,6 +49,22 @@
             padding: 10px;
             resize: vertical;
         }
+        .highlightPreview {
+            background: #1e1e1e;
+            border: 1px solid #444;
+            padding: 10px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        .token { display: inline; }
+        .token.keyword { color: #c586c0; }
+        .token.identifier { color: #9cdcfe; }
+        .token.number { color: #b5cea8; }
+        .token.string { color: #ce9178; }
+        .token.symbol { color: #d4d4d4; }
+        .token.sol { color: #ff6f00; font-weight: bold; }
+        .token.phase { color: #ff6f00; }
+        .token.attribute { color: #d7ba7d; }
         button {
             margin-top: 10px;
             padding: 10px 20px;
@@ -73,19 +89,24 @@
         <div class="tabs">
             <div class="tab active" data-tab="example1">Example 1: Infinity Loop</div>
             <div class="tab" data-tab="example2">Example 2: Basic Constructs</div>
+            <div class="tab" data-tab="example3">Example 3: Martian Sol</div>
         </div>
+
         <div class="tab-content active" id="example1">
             <textarea id="code-example1">coeternal light := ∞;
 
 posit varnothing nabla infty ds2(): {
     octyl time := 1;
     time := time + 1;
+    print(time);
     intertillage [2∞..10∞] -> i: {
         time := i + time;
         print(time);
     }
 }</textarea>
+            <div id="highlightPreview-example1" class="highlightPreview"></div>
         </div>
+
         <div class="tab-content" id="example2">
             <textarea id="code-example2">coeternal light := ∞;
 
@@ -99,9 +120,42 @@ posit varnothing nabla infty ds2(): {
     boundary [0..2∞] -> b_frame: { print(b_frame); }
     boundary [0..3∞] -> c_frame: { print(c_frame); }
     recur ds2(10∞);
-}
-    </textarea>
+}</textarea>
+            <div id="highlightPreview-example2" class="highlightPreview"></div>
         </div>
+
+        <div class="tab-content" id="example3">
+            <textarea id="code-example3">coeternal light := ∞;
+
+posit varnothing nabla infty ds2(): {
+    sol day intensity 0.9 {
+        print("Martian Daytime.");
+        intertillage [∞..∞+10] -> d: {
+            print(d);
+        }
+    }
+    sol night duration 12.3 {
+        print("Martian Nighttime.");
+        delineator "cycle begin": {
+            print("Cycle is beginning. Delineating...");
+        }
+    }
+    sol day duration 12.3 {
+        print("Martian Daytime.");
+        intertillage [∞..∞+20] -> d: {
+            print(d);
+        } 
+    }
+    sol night intensity 0.6 {
+        print("Martian Nighttime.");
+        delineator "cycle end": {
+            print("Cycle is ending. Delineating...");
+        }
+    }
+}</textarea>
+            <div id="highlightPreview-example3" class="highlightPreview"></div>
+        </div>
+
         <div class="buttons">
             <button onclick="compileCode()">Compile Only</button>
             <button onclick="runCode()">Run</button>
@@ -114,70 +168,133 @@ posit varnothing nabla infty ds2(): {
         let outputInterval = null;
 
         // Tab switching logic
-        const tabs = document.querySelectorAll('.tab');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        tabs.forEach(tab => {
+        document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                // Remove active class from all tabs and contents
-                tabs.forEach(t => t.classList.remove('active'));
-                tabContents.forEach(c => c.classList.remove('active'));
-
-                // Add active class to clicked tab and its content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
+                highlightAllPreviews();
             });
         });
 
-        // Get code from active tab
         function getActiveCode() {
             const activeTab = document.querySelector('.tab-content.active textarea');
-            return activeTab.value;
+            return activeTab ? activeTab.value : '';
         }
 
         async function compileCode() {
             const code = getActiveCode();
             const output = document.getElementById("output");
             output.textContent = "Compiling...\n";
-            const response = await fetch("/compile", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code })
-            });
-            const result = await response.json();
-            output.textContent = result.output || ("Error: " + result.error);
+            try {
+                const response = await fetch('/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const result = await response.json();
+                output.textContent = result.output || ('Error: ' + result.error + '\n');
+            } catch (e) {
+                output.textContent = 'Error: Network issue or server error\n';
+            }
         }
 
         async function runCode() {
             const code = getActiveCode();
             const output = document.getElementById("output");
             output.textContent = "Executing...\n";
-            await fetch("/run", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code })
-            });
-            startOutputLoop();
+            try {
+                const response = await fetch('/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                });
+                const result = await response.json();
+                output.textContent = result.output;
+                startOutputLoop();
+            } catch (e) {
+                output.textContent = 'Error: Failed to start execution\n';
+            }
         }
 
         async function stopCode() {
-            await fetch("/stop", { method: "POST" });
-            document.getElementById("output").textContent += "\\n⛔ Stop requested.";
+            const output = document.getElementById("output");
+            try {
+                const response = await fetch('/stop', { method: 'POST' });
+                const result = await response.json();
+                output.textContent += result.status;
+                if (outputInterval) {
+                    clearInterval(outputInterval);
+                    outputInterval = null;
+                }
+            } catch (e) {
+                output.textContent += '\nError: Failed to stop execution';
+            }
         }
 
         function startOutputLoop() {
             if (outputInterval) clearInterval(outputInterval);
             outputInterval = setInterval(async () => {
-                const res = await fetch("/fetch_output");
-                const data = await res.json();
-                document.getElementById("output").textContent = data.output;
-                if (data.done) {
+                try {
+                    const res = await fetch('/fetch_output');
+                    const data = await res.json();
+                    document.getElementById("output").textContent = data.output;
+                    if (data.done) {
+                        clearInterval(outputInterval);
+                        outputInterval = null;
+                        document.getElementById("output").textContent += '\n✅ Execution complete.';
+                    }
+                } catch (e) {
+                    document.getElementById("output").textContent += '\nError: Output fetch failed';
                     clearInterval(outputInterval);
                     outputInterval = null;
-                    document.getElementById("output").textContent += "\\n✅ Execution complete.";
                 }
             }, 500);
         }
+
+        // --- Highlighting logic ---
+        function tokenize(code) {
+            // Dummy tokenizer: Replace this with your real one
+            const words = code.split(/(\s+|[^a-zA-Z0-9_])/).filter(Boolean);
+            return words.map(word => {
+                if (/^\d/.test(word)) return ['NUMBER', word];
+                if (/^".*"$/.test(word)) return ['STRING', word];
+                if (word === 'coeternal' || word === 'posit' || word === 'varnothing' || word === 'nabla' || word === 'infty' || word === 'octyl' || word === 'intertillage' || word === 'print' || word === 'equiangular') return ['KEYWORD', word];
+                if (word === 'sol') return ['SOL', word];
+                if (word === 'day' || word === 'night') return ['PHASE', word];
+                if (word === 'intensity' || word === 'duration') return ['ATTRIBUTE', word];
+                if (/[\(\)\{\}\[\]:=.,+*/-]/.test(word)) return ['SYMBOL', word];
+                return ['IDENTIFIER', word];
+            });
+        }
+
+        function highlightPreview(textareaId, previewId) {
+            const textarea = document.getElementById(textareaId);
+            const preview = document.getElementById(previewId);
+            const tokens = tokenize(textarea.value);
+            preview.innerHTML = tokens.map(([type, value]) => {
+                let className = 'token';
+                if (type === 'KEYWORD') className += ' keyword';
+                else if (type === 'IDENTIFIER') className += ' identifier';
+                else if (type === 'NUMBER') className += ' number';
+                else if (type === 'STRING') className += ' string';
+                else if (type === 'SYMBOL') className += ' symbol';
+                else if (type === 'SOL') className += ' sol';
+                else if (type === 'PHASE') className += ' phase';
+                else if (type === 'ATTRIBUTE') className += ' attribute';
+                return `<span class="${className}">${value}</span>`;
+            }).join('');
+        }
+
+        function highlightAllPreviews() {
+            highlightPreview("code-example1", "highlightPreview-example1");
+            highlightPreview("code-example2", "highlightPreview-example2");
+            highlightPreview("code-example3", "highlightPreview-example3");
+        }
+
+        // Initialize preview highlighting on load
+        window.addEventListener('load', highlightAllPreviews);
     </script>
 </body>
 </html>

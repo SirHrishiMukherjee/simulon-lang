@@ -239,6 +239,12 @@ def execute(node, env, should_continue=lambda: True):
         for child in node.children:
             execute(child, env)
 
+    elif node.type == "SolBlock":
+        mode, prop, value = node.value
+        print(f"🌞 sol {mode} {prop} = {value}")
+        for child in node.children:
+            execute(child, env, should_continue)
+
 def evaluate_expr(expr, env):
     type_ = expr[0]
     if type_ == "Number":

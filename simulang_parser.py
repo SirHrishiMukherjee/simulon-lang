@@ -50,6 +50,8 @@ def parse(tokens):
             return parse_bifurcator()
         elif tokens[i][1] == "boundary":
             return parse_boundary()
+        elif tokens[i][1] == "sol":
+            return parse_sol_block()
         elif tokens[i][1] in ("coeternal", "octyl"):
             return parse_assignment(tokens[i][1] == "coeternal")
         elif tokens[i][0] == "IDENT" and i + 1 < len(tokens) and tokens[i + 1][1] == "(":
@@ -276,5 +278,17 @@ def parse(tokens):
             body.append(parse_statement())
         consume("SYMBOL", "}")
         return Node("Boundary", value=((start, end), varname), children=body)
+
+    def parse_sol_block():
+        consume("KEYWORD", "sol")
+        mode = consume("IDENT")  # "day" or "night"
+        prop = consume("IDENT")  # "intensity" or "duration"
+        value = float(consume("NUMBER"))
+        consume("SYMBOL", "{")
+        body = []
+        while tokens[i][1] != "}":
+            body.append(parse_statement())
+        consume("SYMBOL", "}")
+        return Node("SolBlock", value=(mode, prop, value), children=body)
 
     return parse_program()
