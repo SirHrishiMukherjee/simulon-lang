@@ -264,11 +264,17 @@ def parse(tokens):
 
     def parse_boundary():
         consume("KEYWORD", "boundary")
-        consume("SYMBOL", "[")
-        start = parse_expression()
-        consume("RANGE")
-        end = parse_expression()
-        consume("SYMBOL", "]")
+        if tokens[i][0] == "SYMBOL" and tokens[i][1] == "[":
+            # Standard [start..end] form
+            consume("SYMBOL", "[")
+            start = parse_expression()
+            consume("RANGE")
+            end = parse_expression()
+            consume("SYMBOL", "]")
+            range_expr = (start, end)
+        else:
+            # Single range reference expression
+            range_expr = parse_expression()
         consume("ARROW")
         varname = consume("IDENT")
         consume("SYMBOL", ":")
@@ -277,7 +283,7 @@ def parse(tokens):
         while tokens[i][1] != "}":
             body.append(parse_statement())
         consume("SYMBOL", "}")
-        return Node("Boundary", value=((start, end), varname), children=body)
+        return Node("Boundary", value=(range_expr, varname), children=body)
 
     def parse_sol_block():
         consume("KEYWORD", "sol")

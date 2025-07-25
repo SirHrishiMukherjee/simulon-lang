@@ -191,9 +191,28 @@ def execute(node, env, should_continue=lambda: True):
             execute(child, env, should_continue)
 
     elif node.type == "Boundary":
-        (start_expr, end_expr), varname = node.value
-        start = evaluate_expr(start_expr, env)
-        end = evaluate_expr(end_expr, env)
+        val, varname = node.value
+
+        if isinstance(val, tuple) and len(val) == 2:
+            start_expr, end_expr = val
+            start = evaluate_expr(start_expr, env)
+            end = evaluate_expr(end_expr, env)
+        else:
+            range_obj = evaluate_expr(val, env)
+
+            if isinstance(range_obj, list) and len(range_obj) >= 2:
+                start = range_obj[0]
+                end = range_obj[-1]
+            elif isinstance(range_obj, (tuple, set)) and len(range_obj) >= 2:
+                start, end = list(range_obj)[0], list(range_obj)[-1]
+            elif isinstance(range_obj, dict) and "top" in range_obj and "bottom" in range_obj:
+                start = range_obj["top"]
+                end = range_obj["bottom"]
+            elif isinstance(range_obj, (int, float, SymbolicInfinity)):
+                start = range_obj
+                end = range_obj
+            else:
+                raise RuntimeError(f"Unsupported boundary range: {range_obj}")
 
         def is_infinite(val):
             return isinstance(val, SymbolicInfinity)
@@ -202,6 +221,8 @@ def execute(node, env, should_continue=lambda: True):
         DISPLAY_TAIL = 1
 
         def format_symbolic_range(start_val, end_val):
+            if start_val is None or end_val is None:
+                raise RuntimeError("Boundary start or end is None (invalid input)")
             if is_infinite(end_val):
                 points = [start_val + i for i in range(DISPLAY_HEAD)]
                 points.append("...")
@@ -211,6 +232,8 @@ def execute(node, env, should_continue=lambda: True):
                 return list(range(int(start_val - 1), int(end_val + 2)))
 
         def format_side(start_val, end_val, is_left):
+            if start_val is None or end_val is None:
+                raise RuntimeError("Boundary side range invalid (None values)")
             if is_infinite(end_val):
                 if is_left:
                     return [start_val - 1 + i for i in range(3)]
@@ -237,7 +260,7 @@ def execute(node, env, should_continue=lambda: True):
         env.set(varname, boundary_struct)
 
         for child in node.children:
-            execute(child, env)
+            execute(child, env, should_continue)
 
     elif node.type == "SolBlock":
         mode, prop, value = node.value
