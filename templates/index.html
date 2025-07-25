@@ -105,7 +105,8 @@
             <div class="tab active" data-tab="example1">Example 1: Infinity Loop</div>
             <div class="tab" data-tab="example2">Example 2: Basic Constructs</div>
             <div class="tab" data-tab="example3">Example 3: Martian Sol</div>
-            <div class="tab" data-tab="example4">Example 4: Expanding Boundary Box</div>
+            <div class="tab" data-tab="example4">Example 4: Universal Limit</div>
+            <div class="tab" data-tab="example5">Example 5: Many Worlds</div>
         </div>
 
         <div class="tab-content active" id="example1">
@@ -210,6 +211,23 @@ posit varnothing nabla infty ds2(): {
     recur ds2(10∞);
 }</textarea>
             <div id="highlightPreview-example4" class="highlightPreview"></div>
+        </div>
+
+        <div class="tab-content" id="example5">
+            <textarea id="code-example5">coeternal light := ∞;
+
+posit varnothing nabla infty ds2(): {
+    bifurcator 10[20, 30] -> a(b, c): {
+        bifurcator b[30, 40] -> x(y, z): {
+                 
+        }
+        bifurcator c[40, 50] -> d(e, f): {
+             
+        }
+    }
+    recur ds2(100∞);
+}</textarea>
+            <div id="highlightPreview-example5" class="highlightPreview"></div>
         </div>
 
         <div class="buttons">
@@ -348,6 +366,7 @@ posit varnothing nabla infty ds2(): {
             highlightPreview("code-example2", "highlightPreview-example2");
             highlightPreview("code-example3", "highlightPreview-example3");
             highlightPreview("code-example4", "highlightPreview-example4");
+            highlightPreview("code-example5", "highlightPreview-example5");
         }
 
         // Initialize preview highlighting on load
