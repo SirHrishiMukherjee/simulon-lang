@@ -107,6 +107,7 @@
             <div class="tab" data-tab="example3">Example 3: Martian Sol</div>
             <div class="tab" data-tab="example4">Example 4: Universal Limit</div>
             <div class="tab" data-tab="example5">Example 5: Many Worlds</div>
+            <div class="tab" data-tab="example6">Example 6: Cyborg</div>
         </div>
 
         <div class="tab-content active" id="example1">
@@ -228,6 +229,66 @@ posit varnothing nabla infty ds2(): {
     recur ds2(100∞);
 }</textarea>
             <div id="highlightPreview-example5" class="highlightPreview"></div>
+        </div>
+
+        <div class="tab-content" id="example6">
+            <textarea id="code-example6">coeternal light := ∞;
+
+posit varnothing nabla infty ds2(): {
+
+    sol day intensity 1.0 {
+        print("☀️ Solar Crest Initiated.");
+        intertillage [∞..∞+5] -> crest: {
+            print(crest);
+        }
+        delineator "crest-field": {
+            octyl pulse := 3;
+            print(pulse);
+            print(light);
+        }
+    }
+
+    bifurcator ∞[2∞, 4∞] -> a(b, c): {
+        print(a); print(b); print(c);
+        
+        bifurcator b[4∞, 6∞] -> left(x, y): {
+            boundary [x..y] -> lnode: {
+                print("↙ Left Node at"); print(lnode.top);
+            }
+        }
+
+        bifurcator c[6∞, 8∞] -> right(m, n): {
+            boundary [m..n] -> rnode: {
+                print("↘ Right Node at"); print(rnode.top);
+            }
+        }
+    }
+
+    sol night duration 13.3 {
+        print("🌑 Lunar Sink Phase.");
+        delineator "collapse-threshold": {
+            intertillage [∞..∞+3] -> voidstep: {
+                print("Collapsing at"); print(voidstep);
+            }
+        }
+    }
+
+    boundary [0..light] -> f: {
+        print("🌐 Boundary Field Start:"); print(f.top);
+        boundary f.right -> f1: { print(f1.right); }
+        boundary f.bottom -> f2: { print(f2.bottom); }
+        boundary f.left -> f3: { print(f3.left); }
+    }
+
+    equiangular light == ∞: {
+        print("🧭 Equilibrium Achieved: Simulonic Constants Hold.");
+    }
+
+    print("🔁 Initiating recursive symbolic pass...");
+    recur ds2(100∞);
+}
+</textarea>
+            <div id="highlightPreview-example6" class="highlightPreview"></div>
         </div>
 
         <div class="buttons">
@@ -367,6 +428,7 @@ posit varnothing nabla infty ds2(): {
             highlightPreview("code-example3", "highlightPreview-example3");
             highlightPreview("code-example4", "highlightPreview-example4");
             highlightPreview("code-example5", "highlightPreview-example5");
+            highlightPreview("code-example6", "highlightPreview-example6");
         }
 
         // Initialize preview highlighting on load
