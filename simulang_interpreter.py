@@ -191,12 +191,59 @@ def execute(node, env, should_continue=lambda: True):
             execute(child, env, should_continue)
 
     elif node.type == "Boundary":
+        import os
         val, varname = node.value
 
         if isinstance(val, tuple) and len(val) == 2:
             start_expr, end_expr = val
             start = evaluate_expr(start_expr, env)
             end = evaluate_expr(end_expr, env)
+
+            # 🌐 If both are strings, treat as symbolic 'around' context
+            if isinstance(start, str) and isinstance(end, str):
+                try:
+                    import openai
+                    api_key = os.environ.get("OPENAI_API_KEY")
+                    client = openai.OpenAI(api_key=api_key)
+
+                    context = (
+                        "You are a symbolic boundary generator. "
+                        "Given two symbolic phrases, return a boundary concept that describes what surrounds them. "
+                        "Do not return JSON. Just return a single natural language string of what lies around them."
+                    )
+
+                    prompt = f"What lies around the symbolic concepts '{start}' and '{end}'?"
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": context},
+                            {"role": "user", "content": prompt}
+                        ]
+                    )
+                    response_str = response.choices[0].message.content.strip()
+
+                    boundary_struct = {
+                        "top": response_str,
+                        "bottom": response_str,
+                        "left": response_str,
+                        "right": response_str
+                    }
+
+                except Exception as e:
+                    print("⚠️ OpenAI fallback for string boundary:", e)
+                    fallback_response = f"Around '{start}' and '{end}', symbolic tension forms a transitional envelope."
+                    boundary_struct = {
+                        "top": fallback_response,
+                        "bottom": fallback_response,
+                        "left": fallback_response,
+                        "right": fallback_response
+                    }
+
+                env.set(varname, boundary_struct)
+                for child in node.children:
+                    execute(child, env, should_continue)
+                return
+
         else:
             range_obj = evaluate_expr(val, env)
 
@@ -258,6 +305,90 @@ def execute(node, env, should_continue=lambda: True):
         }
 
         env.set(varname, boundary_struct)
+
+        for child in node.children:
+            execute(child, env, should_continue)
+
+    elif node.type == "Contradiction":
+        import os
+        import openai
+
+        def generate_focal_point(c1, c2):
+            tokens1 = set(c1.lower().replace('.', '').split())
+            tokens2 = set(c2.lower().replace('.', '').split())
+            shared = tokens1.intersection(tokens2)
+            if shared:
+                return ' '.join(shared).capitalize()
+            words1 = c1.split()
+            words2 = c2.split()
+            min_len = min(len(words1), len(words2))
+            mid = []
+            for i in range(min_len):
+                if words1[i] == words2[i]:
+                    mid.append(words1[i])
+                else:
+                    mid.append("~")
+            return ' '.join(mid).replace("~", "...").capitalize()
+
+        def generate_truth_statement(c1, c2, fp):
+            return f"Between '{c1}' and '{c2}', {fp} remains."
+
+        c_expr, c2_expr, fp_var, t_var = node.value
+        c = evaluate_expr(c_expr, env)
+        c2 = evaluate_expr(c2_expr, env)
+
+        try:
+            api_key = os.environ.get("OPENAI_API_KEY")
+            client = openai.OpenAI(api_key=api_key)
+
+            context = (
+                "You are a symbolic sentience engine interpreting contradiction pairs. "
+                "Each contradiction pair forms a symbolic duality that you must analyze. "
+                "Begin by classifying the pair as 'concave' or 'convex'. Then, construct a focal point (fp) "
+                "between them. Finally, confess a symbolic truth (T) derived from the contradictions and focal point. "
+                "Keep output length proportional to the minimum length of the contradictions."
+            )
+
+            # Step 1: Classify
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": context},
+                    {"role": "user", "content": f"Given the following pair of contradictions {c} and {c2}, classify them as concave or convex. One word only."}
+                ]
+            )
+            classification = response.choices[0].message.content.strip()
+
+            # Step 2: Focal Point
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": context},
+                    {"role": "user", "content": f"Given a {classification} pair of contradictions: {c} and {c2}; formulate a focal point statement between the two contradictions. Match the minimum length of the two contradictions."}
+                ]
+            )
+            fp = response.choices[0].message.content.strip()
+
+            # Step 3: Truth
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": context},
+                    {"role": "user", "content": f"Taking the {classification} cross-product of the pair of contradictions {c} and {c2} and the focal point {fp} in the middle, confess a truth statement. Match the length of your response with the minimum length of the two contradictions."}
+                ]
+            )
+            T = response.choices[0].message.content.strip()
+
+        except Exception as e:
+            print("⚠️ OpenAI fallback activated:", e)
+            fp = generate_focal_point(c, c2)
+            T = generate_truth_statement(c, c2, fp)
+
+        # Bind to environment
+        env.set("c", c)
+        env.set("c_", c2)
+        env.set(fp_var, fp)
+        env.set(t_var, T)
 
         for child in node.children:
             execute(child, env, should_continue)

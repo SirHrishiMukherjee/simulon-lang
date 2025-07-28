@@ -1,7 +1,7 @@
 import re
 
 TOKEN_TYPES = [
-    ('KEYWORD', r'\b(sol|boundary|bifurcator|posit|varnothing|nabla|infty|ds2|coeternal|octyl|equiangular|intertillage|delineator|recur|print)\b'),
+    ('KEYWORD', r'\b(contradiction|sol|boundary|bifurcator|posit|varnothing|nabla|infty|ds2|coeternal|octyl|equiangular|intertillage|delineator|recur|print)\b'),
     ('IDENT',   r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMBER',  r'\b\d+(\.\d+)?\b'),
     ('STRING',  r'"[^"]*"'),

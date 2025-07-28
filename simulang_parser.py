@@ -52,6 +52,8 @@ def parse(tokens):
             return parse_boundary()
         elif tokens[i][1] == "sol":
             return parse_sol_block()
+        elif tokens[i][1] == "contradiction":
+            return parse_contradiction()
         elif tokens[i][1] in ("coeternal", "octyl"):
             return parse_assignment(tokens[i][1] == "coeternal")
         elif tokens[i][0] == "IDENT" and i + 1 < len(tokens) and tokens[i + 1][1] == "(":
@@ -60,6 +62,27 @@ def parse(tokens):
             return parse_reassignment()
         else:
             raise SyntaxError(f"Unknown statement: {tokens[i][1]}")
+
+    def parse_contradiction():
+        consume("KEYWORD", "contradiction")
+        consume("SYMBOL", "(")
+        contradiction1 = parse_expression()
+        consume("SYMBOL", ",")
+        contradiction2 = parse_expression()
+        consume("SYMBOL", ")")
+        consume("ARROW")
+        consume("SYMBOL", "[")
+        fp = consume("IDENT")
+        consume("SYMBOL", ",")
+        T = consume("IDENT")
+        consume("SYMBOL", "]")
+        consume("SYMBOL", ":")
+        consume("SYMBOL", "{")
+        body = []
+        while tokens[i][1] != "}":
+            body.append(parse_statement())
+        consume("SYMBOL", "}")
+        return Node("Contradiction", value=(contradiction1, contradiction2, fp, T), children=body)
 
     def parse_function():
         consume("KEYWORD", "posit")
