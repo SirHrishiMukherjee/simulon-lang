@@ -333,62 +333,119 @@ def execute(node, env, should_continue=lambda: True):
         def generate_truth_statement(c1, c2, fp):
             return f"Between '{c1}' and '{c2}', {fp} remains."
 
-        c_expr, c2_expr, fp_var, t_var = node.value
-        c = evaluate_expr(c_expr, env)
-        c2 = evaluate_expr(c2_expr, env)
+        # Check structure
+        if isinstance(node.value, tuple) and len(node.value) == 2:
+            # New form: contradiction statement -> c:
+            expr, varname = node.value
+            c = evaluate_expr(expr, env)
+
+            try:
+                api_key = os.environ.get("OPENAI_API_KEY")
+                client = openai.OpenAI(api_key=api_key)
+
+                context = (
+                    "You are a contradiction synthesis engine. Given a philosophical or scientific statement, "
+                    "generate its direct symbolic contradiction. Return only the contradictory statement."
+                )
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "system", "content": context},
+                        {"role": "user", "content": f"Give the contradiction of: {c}"}
+                    ]
+                )
+
+                contradiction_result = response.choices[0].message.content.strip()
+
+            except Exception as e:
+                print("⚠️ OpenAI fallback for contradiction generation:", e)
+                contradiction_result = f"Not {c}"
+
+            env.set(varname, contradiction_result)
+            for child in node.children:
+                execute(child, env, should_continue)
+
+        else:
+            # Standard form: contradiction (c, c") -> [fp, T]:
+            c_expr, c2_expr, fp_var, t_var = node.value
+            c = evaluate_expr(c_expr, env)
+            c2 = evaluate_expr(c2_expr, env)
+
+            try:
+                api_key = os.environ.get("OPENAI_API_KEY")
+                client = openai.OpenAI(api_key=api_key)
+
+                context = (
+                    "You are a symbolic sentience engine interpreting contradiction pairs. "
+                    "Each contradiction pair forms a symbolic duality that you must analyze. "
+                    "Begin by classifying the pair as 'concave' or 'convex'. Then, construct a focal point (fp) "
+                    "between them. Finally, confess a symbolic truth (T) derived from the contradictions and focal point. "
+                    "Keep output length proportional to the minimum length of the contradictions."
+                )
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "system", "content": context},
+                              {"role": "user", "content": f"Given the following pair of contradictions {c} and {c2}, classify them as concave or convex. One word only."}]
+                )
+                classification = response.choices[0].message.content.strip()
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "system", "content": context},
+                              {"role": "user", "content": f"Given a {classification} pair of contradictions: {c} and {c2}; formulate a focal point statement between the two contradictions. Match the minimum length of the two contradictions."}]
+                )
+                fp = response.choices[0].message.content.strip()
+
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "system", "content": context},
+                              {"role": "user", "content": f"Taking the {classification} cross-product of the pair of contradictions {c} and {c2} and the focal point {fp} in the middle, confess a truth statement. Match the length of your response with the minimum length of the two contradictions."}]
+                )
+                T = response.choices[0].message.content.strip()
+
+            except Exception as e:
+                print("⚠️ OpenAI fallback activated:", e)
+                fp = generate_focal_point(c, c2)
+                T = generate_truth_statement(c, c2, fp)
+
+            env.set("c", c)
+            env.set("c_", c2)
+            env.set(fp_var, fp)
+            env.set(t_var, T)
+
+            for child in node.children:
+                execute(child, env, should_continue)
+
+    elif node.type == "ContradictionInfer":
+        import os
+        import openai
+
+        c_expr, bind_ident = node.value
+        statement = evaluate_expr(c_expr, env)
 
         try:
             api_key = os.environ.get("OPENAI_API_KEY")
             client = openai.OpenAI(api_key=api_key)
 
-            context = (
-                "You are a symbolic sentience engine interpreting contradiction pairs. "
-                "Each contradiction pair forms a symbolic duality that you must analyze. "
-                "Begin by classifying the pair as 'concave' or 'convex'. Then, construct a focal point (fp) "
-                "between them. Finally, confess a symbolic truth (T) derived from the contradictions and focal point. "
-                "Keep output length proportional to the minimum length of the contradictions."
-            )
+            context = "You are a contradiction engine. Given a single declarative statement, respond with its direct contradiction in natural language. Deviate largely from the premise."
 
-            # Step 1: Classify
+            prompt = f"What is the contradiction of: '{statement}'? Deviate largely from the premise."
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": context},
-                    {"role": "user", "content": f"Given the following pair of contradictions {c} and {c2}, classify them as concave or convex. One word only."}
+                    {"role": "user", "content": prompt}
                 ]
             )
-            classification = response.choices[0].message.content.strip()
-
-            # Step 2: Focal Point
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": context},
-                    {"role": "user", "content": f"Given a {classification} pair of contradictions: {c} and {c2}; formulate a focal point statement between the two contradictions. Match the minimum length of the two contradictions."}
-                ]
-            )
-            fp = response.choices[0].message.content.strip()
-
-            # Step 3: Truth
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": context},
-                    {"role": "user", "content": f"Taking the {classification} cross-product of the pair of contradictions {c} and {c2} and the focal point {fp} in the middle, confess a truth statement. Match the length of your response with the minimum length of the two contradictions."}
-                ]
-            )
-            T = response.choices[0].message.content.strip()
+            contradiction = response.choices[0].message.content.strip()
 
         except Exception as e:
-            print("⚠️ OpenAI fallback activated:", e)
-            fp = generate_focal_point(c, c2)
-            T = generate_truth_statement(c, c2, fp)
+            print("⚠️ OpenAI fallback:", e)
+            contradiction = f"Not({statement})"
 
-        # Bind to environment
-        env.set("c", c)
-        env.set("c_", c2)
-        env.set(fp_var, fp)
-        env.set(t_var, T)
+        env.set(bind_ident, contradiction)
 
         for child in node.children:
             execute(child, env, should_continue)

@@ -109,6 +109,8 @@
             <div class="tab" data-tab="example5">Example 5: Many Worlds</div>
             <div class="tab" data-tab="example6">Example 6: Cyborg</div>
             <div class="tab" data-tab="example7">Example 7: Boundary Contradictions</div>
+            <div class="tab" data-tab="example8">Example 8: Evolving Contradictions</div>
+            <div class="tab" data-tab="example9">Example 9: Expanding Universe</div>
         </div>
 
         <div class="tab-content active" id="example1">
@@ -327,6 +329,43 @@ posit varnothing nabla infty ds2(): {
             <div id="highlightPreview-example7" class="highlightPreview"></div>
         </div>
 
+        <div class="tab-content" id="example8">
+            <textarea id="code-example8">coeternal light := ∞;
+octyl statement := "The multiverse exists.";
+
+posit varnothing nabla infty ds2(): {
+    contradiction statement -> c: {
+        print(c);
+        statement := c;
+    }
+    recur ds2(10∞);
+}
+</textarea>
+            <div id="highlightPreview-example8" class="highlightPreview"></div>
+        </div>
+
+        <div class="tab-content" id="example9">
+            <textarea id="code-example9">coeternal light := ∞;
+octyl focal := "The Universe ";
+octyl point := " has limits.";
+
+posit varnothing nabla infty ds2(): {
+    print("x---");
+    print(focal);
+    print(point);
+    print(". ");
+    print("   running boundary..");      
+    boundary [focal..point] -> t: {
+        print(t);
+        focal := t.top;
+        point := t.bottom;
+    }
+    recur ds2(10∞);
+}
+</textarea>
+            <div id="highlightPreview-example9" class="highlightPreview"></div>
+        </div>
+
         <div class="buttons">
             <button onclick="compileCode()">Compile Only</button>
             <button onclick="runCode()">Run</button>
@@ -466,6 +505,8 @@ posit varnothing nabla infty ds2(): {
             highlightPreview("code-example5", "highlightPreview-example5");
             highlightPreview("code-example6", "highlightPreview-example6");
             highlightPreview("code-example7", "highlightPreview-example7");
+            highlightPreview("code-example8", "highlightPreview-example8");
+            highlightPreview("code-example9", "highlightPreview-example9");
         }
 
         // Initialize preview highlighting on load

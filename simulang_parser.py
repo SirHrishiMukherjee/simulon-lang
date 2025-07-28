@@ -65,24 +65,51 @@ def parse(tokens):
 
     def parse_contradiction():
         consume("KEYWORD", "contradiction")
-        consume("SYMBOL", "(")
-        contradiction1 = parse_expression()
-        consume("SYMBOL", ",")
-        contradiction2 = parse_expression()
-        consume("SYMBOL", ")")
-        consume("ARROW")
-        consume("SYMBOL", "[")
-        fp = consume("IDENT")
-        consume("SYMBOL", ",")
-        T = consume("IDENT")
-        consume("SYMBOL", "]")
-        consume("SYMBOL", ":")
-        consume("SYMBOL", "{")
-        body = []
-        while tokens[i][1] != "}":
-            body.append(parse_statement())
-        consume("SYMBOL", "}")
-        return Node("Contradiction", value=(contradiction1, contradiction2, fp, T), children=body)
+
+        # Defensive check for early out-of-bounds
+        if i >= len(tokens):
+            raise SyntaxError("Unexpected end after 'contradiction'")
+
+        # Multi-expression contradiction
+        if tokens[i][0] == "SYMBOL" and tokens[i][1] == "(":
+            consume("SYMBOL", "(")
+            contradiction1 = parse_expression()
+            consume("SYMBOL", ",")
+            contradiction2 = parse_expression()
+            consume("SYMBOL", ")")
+            consume("ARROW")
+            consume("SYMBOL", "[")
+            fp = consume("IDENT")
+            consume("SYMBOL", ",")
+            T = consume("IDENT")
+            consume("SYMBOL", "]")
+            consume("SYMBOL", ":")
+            consume("SYMBOL", "{")
+            body = []
+            while i < len(tokens) and tokens[i][1] != "}":
+                body.append(parse_statement())
+            consume("SYMBOL", "}")
+            return Node("Contradiction", value=(contradiction1, contradiction2, fp, T), children=body)
+
+        # Single-expression contradiction
+        else:
+            contradiction_expr = parse_expression()
+            
+            consume("ARROW")
+
+            if i >= len(tokens) or tokens[i][0] != "IDENT":
+                raise SyntaxError(f"Invalid identifier token after '->': {tokens[i]}")
+
+            bind_token = consume("IDENT")
+            bind_ident = bind_token[0]
+
+            consume("SYMBOL", ":")
+            consume("SYMBOL", "{")
+            body = []
+            while i < len(tokens) and tokens[i][1] != "}":
+                body.append(parse_statement())
+            consume("SYMBOL", "}")
+            return Node("ContradictionInfer", value=(contradiction_expr, bind_ident), children=body)
 
     def parse_function():
         consume("KEYWORD", "posit")
