@@ -121,6 +121,10 @@ posit varnothing nabla infty ds2(): {
     time := time + 1;
     print(time);
     intertillage [2∞..10∞] -> i: {
+        contradiction i -> o: {
+            print(i);
+            print(o);
+        }
         time := i + time;
         print(time);
     }
