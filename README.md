@@ -52,6 +52,17 @@ posit varnothing nabla infty ds2(): {
 * **varnothing** denotes an empty symbolic parameter
 * **nabla infty** invokes infinite recursion and symbolic execution
 
+**Syntax Tree**:
+
+```
+FunctionDefinition
+├── Keyword: posit
+├── Parameters: varnothing
+├── Modifier: nabla infty
+├── Identifier: ds2
+└── Block: { ... }
+```
+
 ---
 
 ### ♾️ Infinity Constant
@@ -62,6 +73,28 @@ coeternal light := ∞;
 
 * Declares `light` as an infinite constant
 * Use `∞` for infinite bounds
+
+**Syntax Tree**:
+
+```
+ConstantDeclaration
+├── Modifier: coeternal
+├── Identifier: light
+├── Operator: :=
+└── Value: ∞
+```
+
+**Diagram:**
+
+```text
+ ┌─────────────┐
+ │ coeternal   │
+ └─────┬───────┘
+       ↓
+   ┌──────┐
+   │light │─── := ───► ∞ (infinity symbol)
+   └──────┘
+```
 
 ---
 
@@ -75,22 +108,54 @@ intertillage [2∞..10∞] -> i: {
 
 * Ranges must be symbolic and can include infinity multipliers
 
+**Syntax Tree**:
+
+```
+IntertillageLoop
+├── Range: [2∞ .. 10∞]
+├── Iterator: i
+└── Body: { ... }
+```
+
+**Diagram:**
+
+```text
+[2∞ .. 10∞] ──> i
+              │
+              ▼
+         { loop body }
+```
+
 ---
 
 ### 🔀 Contradictions
 
 ```simulang
-contradiction A -> B: {
-    print(B);
-}
-
 contradiction (X, Y) -> [Z, T]: {
-    // resolve or explore contradiction
+    // resolution logic
 }
 ```
 
 * Allows symbolic contradiction resolution or recursion
 * Outputs paradox pairs
+
+**Syntax Tree:**
+
+```
+ContradictionBlock
+├── Input: (X, Y)
+├── Output: [Z, T]
+└── Body: { ... }
+```
+
+**Diagram:**
+
+```text
+(X, Y) ── contradiction ──> [Z, T]
+                             │
+                             ▼
+                        { body }
+```
 
 ---
 
@@ -104,17 +169,34 @@ equiangular field == 100: {
 
 * Symbolic conditionals over abstract values
 
+**Syntax Tree:**
+
+```
+EquiangularConditional
+├── Condition: field == 100
+└── Body: { ... }
+```
+
 ---
 
 ### 🌌 Bifurcators (Recursive Forks)
 
 ```simulang
 bifurcator 10[20, 30] -> a(b, c): {
-    // branching
+    // branching logic
 }
 ```
 
 * Symbolic bifurcation, often infinite
+
+**Syntax Tree:**
+
+```
+BifurcatorBlock
+├── Entry: 10[20, 30]
+├── Signature: a(b, c)
+└── Body: { ... }
+```
 
 ---
 
@@ -124,12 +206,18 @@ bifurcator 10[20, 30] -> a(b, c): {
 sol day intensity 0.9 {
     // code
 }
-sol night duration 12.3 {
-    // code
-}
 ```
 
 * Represents temporal cosmic phases with attributes
+
+**Syntax Tree:**
+
+```
+SolBlock
+├── Phase: day
+├── Attribute: intensity 0.9
+└── Body: { ... }
+```
 
 ---
 
@@ -143,6 +231,15 @@ boundary [0..∞] -> frame: {
 
 * Symbolic boundary traversal for dimensional axes
 
+**Syntax Tree:**
+
+```
+BoundaryLoop
+├── Range: [0..∞]
+├── Identifier: frame
+└── Body: { ... }
+```
+
 ---
 
 ### 🔁 Recursion
@@ -152,6 +249,14 @@ recur ds2(10∞);
 ```
 
 * Recursive symbolic invocation, possibly infinite
+
+**Syntax Tree:**
+
+```
+RecursiveCall
+├── Function: ds2
+└── Argument: 10∞
+```
 
 ---
 
